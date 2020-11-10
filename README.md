@@ -9,7 +9,8 @@ PROTOTYPE / WIP
 1. Bring up one Etherpad instance on localhost:9002
 1. Copy this config into your nginx config ``cp etherpad /etc/nginx/sites-enabled``
 1. Reload nginx ``/etc/init.d/nginx reload``
-
+1. Visit http://yournginxip/p/one - edits should land on 9001
+1. Visit http://yournginxip/p/one - edits should land on 9002
 # License
 
 Apache 2
