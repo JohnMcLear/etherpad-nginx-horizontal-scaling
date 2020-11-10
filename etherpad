@@ -9,10 +9,9 @@ upstream two {
 }
 
 # map to different upstream backends based on header
-map $http_x_padid $pool {
+map $arg_padId $pool {
   one "one";
   two "two";
-  default "one";
 }
 
 map $http_upgrade $connection_upgrade {
@@ -22,7 +21,7 @@ map $http_upgrade $connection_upgrade {
 
 server {
   listen 80;
-  server_name loadtest;
+  server_name _;
 
   location /p/one {
     proxy_pass http://127.0.0.1:9001;
@@ -44,8 +43,9 @@ server {
 #    proxy_pass http://127.0.0.1:9001;
 #  }
 
-  location /socket.io {
-    proxy_pass http://127.0.0.1:9001;
+  location /socket.io/socket.io.js {
+#    proxy_pass http://127.0.0.1:9001;
+    proxy_pass $pool;
   }
 
   location /static {
@@ -56,9 +56,9 @@ server {
     proxy_pass http://127.0.0.1:9001;
   }
 
-  location /socket.io.js {
-    proxy_pass http://127.0.0.1:9001;
-  }
+#  location /socket.io.js {
+#    proxy_pass http://127.0.0.1:9001;
+#  }
 
   location /pluginfw {
     proxy_pass http://127.0.0.1:9001;
