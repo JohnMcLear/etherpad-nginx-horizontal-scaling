@@ -6,41 +6,38 @@ map $http_upgrade $connection_upgrade {
 server {
   listen 80;
   server_name _;
-  add_header X-ref $http_referer; # works
+  # add_header X-ref $http_referer; # works
 
   location / {
-
-    # TODO: replace with map, hard code backends for now
-    if ($http_referer = "http://loadtest/p/one") {
-      proxy_pass http://127.0.0.1:9001;
-    }
-
-    if ($http_referer = "http://loadtest/p/two") {
-      proxy_pass http://127.0.0.1:9002;
-    }
-
     # All other things can hit 9001
     proxy_pass http://127.0.0.1:9001;
   }
 
   location ~* \.io {
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header Host $http_host;
-    proxy_set_header X-NginX-Proxy false;
+    # websocket connections work for this host
     if ($http_referer = "http://loadtest/p/one") {
       proxy_pass http://127.0.0.1:9001;
     }
 
+    # websocket connections DONT work for this host..
+    # falls back to polling
     if ($http_referer = "http://loadtest/p/two") {
       proxy_pass http://127.0.0.1:9002;
     }
-    proxy_pass http://127.0.0.1:9001;
-    proxy_redirect off;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-  }
 
+    proxy_buffering    off; # be careful, this line doesn't override any proxy_buffering on set in a conf.d/file.conf
+    proxy_set_header   Host $host;
+    proxy_pass_header  Server;
+
+    # Note you might want to pass these headers etc too.
+    proxy_set_header    X-Real-IP $remote_addr; # https://nginx.org/en/docs/http/ngx_http_proxy_module.html
+    proxy_set_header    X-Forwarded-For $remote_addr; # EP logs to show the actual remote IP
+    proxy_set_header    X-Forwarded-Proto $scheme; # for EP to set secure cookie flag when https is used
+    proxy_http_version  1.1; # recommended with keepalive connections
+
+    # WebSocket proxying - from https://nginx.org/en/docs/http/websocket.html
+    proxy_set_header  Upgrade $http_upgrade;
+    proxy_set_header  Connection $connection_upgrade;
+  }
 
 }
